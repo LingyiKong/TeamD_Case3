@@ -1,0 +1,109 @@
+---
+title: "TeamD_Case3"
+author: "Shine,Tianyu Zhang, Lingyi Kong, Zhechen Meng"
+date: "3/20/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#load the package
+library(GGally)
+```
+
+## R Markdown
+
+```{r, echo=FALSE,warning=FAlSE}
+#read the data
+whr_2017DB <- read.csv("whr_2017.csv")
+summary(whr_2017DB)
+
+#checking total missing data
+sapply(whr_2017DB,function(x) sum(is.na(x)))
+
+#visualize the correlation between variables
+ggcorr(whr_2017DB[,-1], label=TRUE, cex=3)
+
+#deal with the missing data,as kmeans can't handle data has NA values
+#impute with median
+whr_2017DB$LnGDPpc[is.na(whr_2017DB$LnGDPpc)] = median(whr_2017DB$LnGDPpc, na.rm = TRUE)
+whr_2017DB$LifeExp[is.na(whr_2017DB$LifeExp)] = median(whr_2017DB$LifeExp, na.rm = TRUE)
+whr_2017DB$LifeChoice[is.na(whr_2017DB$LifeChoice)] = median(whr_2017DB$LifeChoice, na.rm = TRUE)
+whr_2017DB$Generosity[is.na(whr_2017DB$Generosity)] = median(whr_2017DB$Generosity, na.rm = TRUE)
+whr_2017DB$Corruption[is.na(whr_2017DB$Corruption)] = median(whr_2017DB$Corruption, na.rm = TRUE)
+whr_2017DB$GDPpc[is.na(whr_2017DB$GDPpc)] = median(whr_2017DB$GDPpc, na.rm = TRUE)
+
+#drop the LifeLaddar and GDPpc column
+whr_2017_DF <- whr_2017DB[,-c(2,8)]
+
+```
+###GDPpc and LnGDPpc are highly correlated, as they represent the same variable, so dorp one for following analysis.
+
+##1.Build the clusters by using hierarchical and k-means
+```{r}
+# Normalized the data
+whr_2017_DF.scaled<- scale(whr_2017_DF[,-1])
+
+#set row names
+row.names(whr_2017_DF.scaled) <-whr_2017_DF$country
+
+#build k-means model
+par(mfrow = c(1, 1))
+
+# Initialize total within sum of squares error: wss
+wss <- 0
+
+# Look over 3 to 8 possible clusters
+for (i in 1:8) {
+  # Fit the model: km.out
+  km.out <- kmeans(whr_2017_DF.scaled, centers = i, nstart = 20, iter.max = 50)
+  # Save the within cluster sum of squares
+  wss[i] <- km.out$tot.withinss
+}
+
+
+
+# Produce a scree plot
+plot(1:8, wss, type = "b", 
+     xlab = "Number of Clusters", 
+     ylab = "Within groups sum of squares")
+
+
+# Select number of clusters
+k <- 3
+
+# Build model with k clusters: km.out
+km.out <- kmeans(whr_2017_DF.scaled, centers = k, nstart = 50, iter.max = 50)
+
+# View the resulting model
+km.out
+
+# Create hierarchical clustering model: hclust.out
+hclust.out <- hclust(dist(whr_2017_DF.scaled), method="complete")
+
+# Inspect the result
+summary(hclust.out)
+
+#prune the tree
+hclust.out_cut <- cutree(hclust.out, k = 3)
+
+#plot the heatmap
+# set labels as cluster membership and utility name
+row.names(whr_2017_DF.scaled) <- paste(hclust.out_cut, ": ", row.names(whr_2017_DF.scaled), sep = "")
+
+# plot heatmap
+# rev() reverses the color mapping to large = dark
+heatmap(as.matrix(whr_2017_DF.scaled), Colv = NA, hclustfun = hclust,
+        col=rev(paste("gray",1:99,sep="")))
+
+```
+
+
+###Reference
+[1].https://rpubs.com/mohammadshadan/273129
+[2].https://www.kaggle.com/unsdsn/world-happiness/kernels
+[3]https://stat.ethz.ch/R-manual/R-devel/library/stats/html/kmeans.html
