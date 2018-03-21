@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #load the package
 library(GGally)
+library(factoextra)
 ```
 
 ## Part One: Models without LifeLadder
@@ -117,6 +118,9 @@ row.names(whr_2017_DF.scaled) <- paste(hclust.out_cut, ": ", row.names(whr_2017_
 heatmap(as.matrix(whr_2017_DF.scaled), Colv = NA, hclustfun = hclust,
         col=rev(paste("gray",1:99,sep="")))
 
+#visualize each cluster for hierarchical clustering
+fviz_cluster(list(data = whr_2017_DF.scaled, cluster = hclust.out_cut))
+
 ```
 ###Results:
 ####For K-means model, there are three clusters, and the size for each cluster is 82, 20, 39; the five countries for each cluster are:
@@ -207,6 +211,8 @@ row.names(whr_2017_DF_LL.scaled) <- paste(hclust.out_cut_LL, ": ", row.names(whr
 heatmap(as.matrix(whr_2017_DF_LL.scaled), Colv = NA, hclustfun = hclust,
         col=rev(paste("gray",1:99,sep="")))
 
+#visualize each cluster for hierarchical clustering
+fviz_cluster(list(data = whr_2017_DF_LL.scaled, cluster = hclust.out_cut_LL))
 ```
 ###Results:
 ####For K-means model, there are three clusters, and the size for each cluster is 73, 20, 48; the five countries for each cluster are:
